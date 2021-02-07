@@ -27,7 +27,7 @@ type KeyChangeEvent struct {
 
 type WatchKeyResponse struct {
 	Watcher            clientv3.Watcher
-	keyChangeEventChan chan *KeyChangeEvent
+	KeyChangeEventChan chan *KeyChangeEvent
 }
 
 type Etcd struct {
@@ -43,6 +43,7 @@ type EtcdConf struct {
 	Password    string
 }
 
+// create a new etcd client
 func NewEtcdClient(conf *EtcdConf) (*Etcd, error) {
 
 	cli, err := clientv3.New(clientv3.Config{
@@ -63,6 +64,7 @@ func NewEtcdClient(conf *EtcdConf) (*Etcd, error) {
 
 }
 
+// get  with key prefix
 func (e *Etcd) GetWithKeyPrefix(keyPrefix string) (keys [][]byte, values [][]byte, err error) {
 
 	getResponse, err := e.kv.Get(context.Background(), keyPrefix, clientv3.WithPrefix())
@@ -86,6 +88,7 @@ func (e *Etcd) GetWithKeyPrefix(keyPrefix string) (keys [][]byte, values [][]byt
 
 }
 
+// watch a key prefix
 func (e *Etcd) WatchWithKeyPrefix(keyPrefix string) (watchResponse *WatchKeyResponse) {
 
 	watcher := clientv3.NewWatcher(e.cli)
@@ -94,19 +97,18 @@ func (e *Etcd) WatchWithKeyPrefix(keyPrefix string) (watchResponse *WatchKeyResp
 
 	watchResponse = &WatchKeyResponse{
 		Watcher:            watcher,
-		keyChangeEventChan: make(chan *KeyChangeEvent, 200),
+		KeyChangeEventChan: make(chan *KeyChangeEvent, 200),
 	}
 	go func() {
 
-		defer watcher.Close()
-		for ch := range watchChan {
-
-			if ch.Canceled {
-				log.Println("the watcher has canceled....")
+		for {
+			ch, ok := <-watchChan
+			if !ok || ch.Canceled {
+				log.Println("the watcher channel  has close....")
 				break
 			}
 			for _, event := range ch.Events {
-				e.handleKeyChangeEvent(event, watchResponse.keyChangeEventChan)
+				e.handleKeyChangeEvent(event, watchResponse.KeyChangeEventChan)
 			}
 		}
 
@@ -125,9 +127,9 @@ func (e *Etcd) handleKeyChangeEvent(event *clientv3.Event, keyChangeEventChan ch
 	switch event.Type {
 
 	case mvccpb.PUT:
-		if event.IsCreate() {
+		if event.IsCreate() { // create event
 			changeEvent.EventType = KeyChangeEventCreateType
-		} else {
+		} else { // update event
 			changeEvent.EventType = KeyChangeEventUpdateType
 		}
 		changeEvent.V = event.Kv.Value
@@ -136,6 +138,7 @@ func (e *Etcd) handleKeyChangeEvent(event *clientv3.Event, keyChangeEventChan ch
 		changeEvent.EventType = KeyChangeEventDeleteType
 	}
 
+	// send a key change event
 	keyChangeEventChan <- changeEvent
 
 }

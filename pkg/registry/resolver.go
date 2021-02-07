@@ -14,13 +14,13 @@ var (
 
 type EtcdResolver struct {
 	option EtcdResolverOption
-	cc resolver.ClientConn
-	cli *etcd.Etcd
+	cc     resolver.ClientConn
+	cli    *etcd.Etcd
 }
 
 type EtcdResolverOption struct {
-	scheme    string
-	endpoints []string
+	scheme          string
+	endpoints       []string
 	etcdDailTimeout time.Duration
 }
 
@@ -40,7 +40,7 @@ func WithEndpoints(endpoints []string) EtcdResolverOptions {
 	}
 }
 
-func WithEtcdDailTimeout(dailTimeout time.Duration)EtcdResolverOptions  {
+func WithEtcdDailTimeout(dailTimeout time.Duration) EtcdResolverOptions {
 
 	return func(option *EtcdResolverOption) {
 		option.etcdDailTimeout = dailTimeout
@@ -64,8 +64,8 @@ func NewEtcdResolver(options ...EtcdResolverOptions) (resolver *EtcdResolver, er
 		return nil, ErrorSchemeIsNil
 	}
 
-	if opt.etcdDailTimeout ==0 {
-		opt.etcdDailTimeout = time.Second*10
+	if opt.etcdDailTimeout == 0 {
+		opt.etcdDailTimeout = time.Second * 10
 	}
 	resolver = &EtcdResolver{option: opt}
 	return
@@ -81,8 +81,7 @@ func (r *EtcdResolver) Build(target resolver.Target, cc resolver.ClientConn, opt
 	return r, nil
 }
 
-func (r *EtcdResolver)watch(keyPrefix string)  {
-
+func (r *EtcdResolver) watch(keyPrefix string) {
 }
 
 // Scheme returns the scheme supported by this resolver.
