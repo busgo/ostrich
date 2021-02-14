@@ -1,0 +1,22 @@
+syntax ="proto3";
+
+package com.busgo.ostrich.proto;
+option go_package ="pb";
+
+service  PingService {
+
+  // ping
+  rpc ping(PingRequest)returns(PingResponse);
+}
+
+
+message PingRequest {
+
+  string  name =1;
+}
+
+message PingResponse {
+
+  string  name =2;
+}
+
